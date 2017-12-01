@@ -6,6 +6,7 @@ import flixel.addons.util.FlxFSM;
 import flixel.FlxG;
 import flixel.FlxObject;
 import flixel.system.FlxAssets.FlxGraphicAsset;
+import flixel.group.FlxGroup.FlxTypedGroup;
 
 /**
  To be fair, you have to have a very high IQ to understand Haxe Flixel. The logic is extremely subtle, and without a solid grasp of theoretical programming
@@ -25,9 +26,11 @@ class Player1 extends FlxSprite
 	public var bala:Bullet;
 	public var _isBlocking:Bool = false;
 	public var _timerReload:Float = 0;
-	public function new(?X:Float=0, ?Y:Float=0, ?SimpleGraphic:FlxGraphicAsset) 
+	private var _balasRef:FlxTypedGroup<Bullet>;
+	public function new(_balas:FlxTypedGroup<Bullet>, ?X:Float = 0, ?Y:Float = 0, ?SimpleGraphic:FlxGraphicAsset) 
 	{
 		super(X, Y);
+		_balasRef = _balas;
 		loadGraphic(AssetPaths.Player1__png, true, 32, 32);
 		updateHitbox();
 		setFacingFlip(FlxObject.RIGHT, false, false);
@@ -50,8 +53,7 @@ class Player1 extends FlxSprite
 		.add(Reloading,Idle,Conditions.endReload)
 		.start(Idle);
 		
-		
-		
+		FlxG.state.add(_balasRef);
 	}
 	
 	override public function update(elapsed:Float):Void 
@@ -61,6 +63,19 @@ class Player1 extends FlxSprite
 		super.update(elapsed);
 		velocity.x = 0;
 		velocity.y = 0;
+		checkBorders();
+	}
+	
+	function checkBorders() 
+	{
+		if (this.x < 0)
+		this.x = 0;
+		else if (this.x > 512 - this.width)
+		this.x = 512 - this.width;
+		else if (this.y < 0)
+		this.y = 0;
+		else if (this.y > 511 - this.height)
+		this.y = 511 - this.height;
 	}
 	
 	function checkFacing() 
@@ -77,23 +92,23 @@ class Player1 extends FlxSprite
 	{
 		if (facing == FlxObject.RIGHT)
 		{
-			bala = new Bullet("Right",this.x+this.width-1,this.y);
-			FlxG.state.add(bala);
+			bala = new Bullet(_balasRef,"Right",this.x+5+this.width,this.y);
+			_balasRef.add(bala);
 		}
 		else if (facing == FlxObject.LEFT)
 		{
-			bala = new Bullet("Left",this.x,this.y+this.height-5);
-			FlxG.state.add(bala);
+			bala = new Bullet(_balasRef,"Left",this.x-15,this.y+this.height-5);
+			_balasRef.add(bala);
 		}
 		else if (facing == FlxObject.UP)
 		{
-			bala = new Bullet("Up",this.x,this.y);
-			FlxG.state.add(bala);
+			bala = new Bullet(_balasRef,"Up",this.x,this.y-10);
+			_balasRef.add(bala);
 		}
 		else
 		{
-		bala = new Bullet("Down",this.x+this.width-10,this.y+this.height+1);
-		FlxG.state.add(bala);
+		bala = new Bullet(_balasRef,"Down",this.x+this.width-10,this.y+this.height+5);
+			_balasRef.add(bala);
 		}
 		
 	}
@@ -132,7 +147,7 @@ class Player1 extends FlxSprite
 		}
 		public static function reload(Owner:Player1):Bool 
 		{
-			return FlxG.keys.pressed.NUMPADTHREE;
+			return (FlxG.keys.pressed.NUMPADTHREE && Owner._balas < 5);
 		}
 		public static function endReload(Owner:Player1):Bool 
 		{
